@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Расходы</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container" id="app" v-cloak>
+
+        <!-- Авторизация -->
+        <div v-if="!isSignedIn" class="auth-screen">
+            <div class="auth-card">
+                <div class="logo">฿</div>
+                <h1>Расходы</h1>
+                <p>Войди через Google чтобы начать</p>
+                <button class="btn-primary" @click="signIn" :disabled="!isAuthReady">Войти через Google</button>
+            </div>
+        </div>
+
+        <!-- Основное приложение -->
+
+        <div v-else class="app-layout">
+
+            <!-- Шапка -->
+            <header class="app-header">
+                <div class="header-left">
+                    <span class="logo-small">฿</span>
+                    <span class="month-label">Расходы: {{ currentMonthName }}</span>
+                </div>
+                <button class="btn-signout" @click="signOut">Выйти</button>
+            </header>
+
+            <!-- Форма добавления -->
+            <form class="form-card" @submit.prevent="addExpense">
+                <div class="form-date">{{ todayDate }}</div>
+
+                <div class="form-row">
+                    <div class="form-field">
+                        <label for="amount">Сумма</label>
+                        <input id="amount"
+                               type="number"
+                               v-model="form.amount"
+                               placeholder="0"/>
+                    </div>
+                    <div class="form-field">
+                        <label for="category">Категория</label>
+                        <select id="category" v-model="form.category">
+                            <option value="" disabled>выбрать</option>
+                            <option v-for="category in sortedCategories" :value="category" :key="category">
+                                {{ category }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label for="comment">Комментарий</label>
+                    <input id="comment"
+                           type="text"
+                           v-model="form.comment"/>
+                </div>
+
+                <button class="btn-primary btn-add" type="submit" :disabled="isSaving || !form.amount || !form.category">
+                    <span v-if="isSaving">Сохраняю...</span>
+                    <span v-else>Добавить</span>
+                </button>
+                <div v-if="successMsg" class="success-msg">{{ successMsg }}</div>
+                <div v-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
+            </form>
+
+            <!-- Траты сегодня -->
+            <div class="today-block" >
+                <div class="today-header">
+                    <span class="today-title">Сегодня: </span>
+                    <span class="today-total" :class="todayColorClass">{{ formatAmount(todayTotal) }} ฿</span>
+                </div>
+                <div class="expense-list">
+                    <div class="expense-item" v-for="(exp, i) in todayExpenses" :key="i">
+                        <div class="exp-left">
+                            <span class="exp-cat">{{ exp.category }}</span>
+                            <span class="exp-comment">{{ exp.comment }}</span>
+                        </div>
+                        <span class="exp-amount">{{ formatAmount(Number(exp.amount)) }} ฿</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Траты за месяц -->
+            <div class="month-block">
+                <div class="month-header">
+                    <span class="month-title">Всего за месяц: </span>
+                    <span class="month-total">{{ formatAmount(monthTotal) }} ฿</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <!-- Google API client -->
+    <script src="https://apis.google.com/js/api.js"></script>
+
+    <!-- Authorization (for token receiving) -->
+    <script src="https://accounts.google.com/gsi/client"></script>
+
+    <script src="app.js"></script>
+</body>
+</html>

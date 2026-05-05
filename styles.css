@@ -1,0 +1,325 @@
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --green: #1a9e5f;
+    --green-bg: #e8f7f0;
+    --green-border: #a3dfc0;
+    --yellow: #c47f00;
+    --yellow-bg: #fef8e7;
+    --yellow-border: #f5d87a;
+    --red: #c0392b;
+    --red-bg: #fdecea;
+    --red-border: #f5b7b1;
+    --bg: #f4f2ee;
+    --card: #ffffff;
+    --text: #1a1a1a;
+    --text-muted: #888;
+    --border: #e8e4dc;
+    --accent: #2c5f8a;
+    --accent-light: #e8f0f8;
+    --font: 'Manrope', sans-serif;
+    --radius: 14px;
+    --radius-sm: 8px;
+}
+
+[v-cloak] {
+    display: none;
+}
+
+body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+/* AUTH */
+.auth-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.auth-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 2.5rem 2rem;
+    text-align: center;
+    width: 100%;
+    max-width: 360px;
+    border: 1px solid var(--border);
+}
+
+.logo {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+}
+
+.auth-card h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.auth-card p {
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+}
+
+/* LAYOUT */
+.app-layout {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 0 3rem;
+}
+
+/* HEADER */
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1rem 0.5rem;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.logo-small {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.month-label {
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.btn-signout {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.3rem 0.7rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: var(--font);
+}
+
+.btn-signout:hover { background: var(--border); }
+
+/* FORM */
+.form-card {
+    margin: 0 1rem 0.75rem;
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 1.1rem;
+    border: 1px solid var(--border);
+}
+
+.form-date {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 0.8rem;
+    text-transform: capitalize;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+    margin-bottom: 0.6rem;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.form-field label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.form-field input,
+.form-field select {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.55rem 0.7rem;
+    font-family: var(--font);
+    font-size: 0.95rem;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+}
+
+.field input:focus,
+.field select:focus {
+    border-color: var(--accent);
+}
+
+.field.full { margin-bottom: 0.6rem; }
+
+/* BUTTONS */
+.btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 0.7rem 1.2rem;
+    font-family: var(--font);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 0.5rem;
+    transition: opacity 0.2s, transform 0.1s;
+}
+
+.btn-primary:hover { opacity: 0.88; }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-add { margin-top: 0.75rem; }
+
+.success-msg {
+    margin-top: 0.6rem;
+    font-size: 0.82rem;
+    color: var(--green);
+    font-weight: 500;
+    text-align: center;
+}
+
+.error-msg {
+    margin-top: 0.6rem;
+    font-size: 0.82rem;
+    color: var(--red);
+    font-weight: 500;
+    text-align: center;
+}
+
+/* TODAY */
+.today-block {
+    margin: 0 1rem 0.75rem;
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--border);
+}
+
+.today-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.7rem;
+}
+
+.today-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+.today-total {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.today-total.color-green { color: var(--green); }
+.today-total.color-yellow { color: var(--yellow); }
+.today-total.color-red { color: var(--red); }
+
+.expense-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    max-height: 20vh;
+    overflow-y: auto;
+}
+
+.expense-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.expense-item:last-child { border-bottom: none; }
+
+.exp-left { display: flex; flex-direction: column; gap: 0.1rem; }
+
+.exp-cat {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.exp-comment {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.exp-amount {
+    font-size: 0.95rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* MONTH */
+.month-block {
+    margin: 0 1rem 0.75rem;
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--border);
+}
+
+.month-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.month-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+.month-total {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
