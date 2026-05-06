@@ -17,7 +17,7 @@ const app = Vue.createApp({
             allExpenses: [],
             categories: ['еда', 'продукты', 'алкоголь', 'красота', 'здоровье', 'спорт', 'шоппинг', 'транспорт', 'байк', 'развлечения', 'мелочи'],
             form: {
-                amount: '',
+                amount: 0,
                 category: '',
                 comment: ''
             }
@@ -29,13 +29,21 @@ const app = Vue.createApp({
             this._tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: CONFIG.CLIENT_ID,
                 scope: 'https://www.googleapis.com/auth/spreadsheets',
+                prompt: '',
                 callback: async (resp) => {
                     if (resp.error) {
                         this.errorMsg = 'Ошибка авторизации'
                         return
                     }
+                    // Сохраняем токен в localStorage
+                    const token = gapi.client.getToken()
+                    localStorage.setItem('gapi_token', JSON.stringify(token))
+                    console.log('Токен для входа:', localStorage.getItem('gapi_token'))
+
                     this.isSignedIn = true
+
                     await this.loadExpenses()
+
                     console.log('Вход успешен')
                 },
             })
@@ -48,7 +56,38 @@ const app = Vue.createApp({
             const token = gapi.client.getToken()
             if (token) google.accounts.oauth2.revoke(token.access_token)
             gapi.client.setToken(null)
+            localStorage.removeItem('gapi_token')
             this.isSignedIn = false
+        },
+        refreshToken() {
+            return new Promise((resolve, reject) => {
+                // Меняем callback на одноразовый который просто резолвит промис
+                this._tokenClient.callback = async (resp) => {
+                    if (resp.error) {
+                        reject(resp.error)
+                        return
+                    }
+                    // Сохраняем новый токен
+                    const token = gapi.client.getToken()
+                    localStorage.setItem('gapi_token', JSON.stringify(token))
+                    resolve()
+                }
+                // Запрашиваем новый токен без окна входа
+                this._tokenClient.requestAccessToken({ prompt: '' })
+            })
+        },
+        async apiRequest(requestFn) {
+            try {
+                // Пробуем выполнить запрос
+                return await requestFn()
+            } catch (e) {
+                // Если токен протух — обновляем и повторяем
+                if (e.status === 401) {
+                    await this.refreshToken()
+                    return await requestFn()
+                }
+                throw e
+            }
         },
 
         async addExpense() {
@@ -59,22 +98,24 @@ const app = Vue.createApp({
             this.successMsg = ''
 
             try {
-                await gapi.client.sheets.spreadsheets.values.append({
-                    spreadsheetId: CONFIG.SHEET_ID,
-                    range: `${CONFIG.SHEET_NAME}!A:D`,           // в какой лист и колонки писать
-                    valueInputOption: 'RAW',        // писать как есть, без форматирования
-                    resource: {
-                        values: [[                    // массив строк, каждая строка — массив ячеек
-                            this.todayDate,                 // A: дата
-                            Number(this.form.amount),   // B: сумма
-                            this.form.category,         // C: категория
-                            this.form.comment,          // D: комментарий
-                        ]]
-                    },
-                })
+                await this.apiRequest(() =>
+                    gapi.client.sheets.spreadsheets.values.append({
+                        spreadsheetId: CONFIG.SHEET_ID,
+                        range: `${CONFIG.SHEET_NAME}!A:D`,  // в какой лист и колонки писать
+                        valueInputOption: 'RAW',            // писать как есть, без форматирования
+                        resource: {                         // массив строк, каждая строка — массив ячеек
+                            values: [[
+                                this.todayDate,            // A: дата
+                                this.form.amount,          // B: сумма
+                                this.form.category,        // C: категория
+                                this.form.comment,         // D: комментарий
+                            ]]
+                        },
+                    })
+                )
 
                 this.successMsg = 'Сохранено ✓'
-                this.form = { amount: '', category: '', comment: '' }
+                this.form = { amount: 0, category: '', comment: '' }
                 await this.loadExpenses()
                 setTimeout(() => { this.successMsg = '' }, 2500)
 
@@ -87,10 +128,12 @@ const app = Vue.createApp({
 
         async loadExpenses() {
             try {
-                const resp = await gapi.client.sheets.spreadsheets.values.get({
-                    spreadsheetId: CONFIG.SHEET_ID,
-                    range: `${CONFIG.SHEET_NAME}!A:D`,
-                })
+                const resp = await this.apiRequest(() =>
+                    gapi.client.sheets.spreadsheets.values.get({
+                        spreadsheetId: CONFIG.SHEET_ID,
+                        range: `${CONFIG.SHEET_NAME}!A:D`,
+                    })
+                )
 
                 const rows = resp.result.values || []
                 // Пропускаем первую строку с заголовками
@@ -106,7 +149,7 @@ const app = Vue.createApp({
         },
 
         formatAmount(n) {
-            return Number(n).toLocaleString('ru-RU')
+            return n.toLocaleString('ru-RU')
         },
     },
     computed: {
@@ -192,6 +235,14 @@ const app = Vue.createApp({
 
         // Запускаем авторизацию
         this.initGoogleAuth()
+
+        // Проверяем есть ли сохранённый токен
+        const savedToken = localStorage.getItem('gapi_token')
+        if (savedToken) {
+            gapi.client.setToken(JSON.parse(savedToken))
+            this.isSignedIn = true
+            await this.loadExpenses()
+        }
     }
 })
 

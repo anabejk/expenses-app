@@ -45,8 +45,7 @@
                         <label for="amount">Сумма</label>
                         <input id="amount"
                                type="number"
-                               v-model="form.amount"
-                               placeholder="0"/>
+                               v-model.number="form.amount"/>
                     </div>
                     <div class="form-field">
                         <label for="category">Категория</label>
@@ -62,7 +61,7 @@
                     <label for="comment">Комментарий</label>
                     <input id="comment"
                            type="text"
-                           v-model="form.comment"/>
+                           v-model.trim="form.comment"/>
                 </div>
 
                 <button class="btn-primary btn-add" type="submit" :disabled="isSaving || !form.amount || !form.category">
@@ -85,7 +84,7 @@
                             <span class="exp-cat">{{ exp.category }}</span>
                             <span class="exp-comment">{{ exp.comment }}</span>
                         </div>
-                        <span class="exp-amount">{{ formatAmount(Number(exp.amount)) }} ฿</span>
+                        <span class="exp-amount">{{ formatAmount(exp.amount) }} ฿</span>
                     </div>
                 </div>
             </div>

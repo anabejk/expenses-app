@@ -263,7 +263,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
-    max-height: 20vh;
+    max-height: 40vh;
     overflow-y: auto;
 }
 
