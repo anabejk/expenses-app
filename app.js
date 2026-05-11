@@ -12,10 +12,11 @@ const app = Vue.createApp({
             isSignedIn: false,
             isAuthReady: false,
             isSaving: false,
+            sessionExpired: false,
             successMsg: '',
             errorMsg: '',
             allExpenses: [],
-            categories: ['еда', 'продукты', 'алкоголь', 'красота', 'здоровье', 'спорт', 'шоппинг', 'транспорт', 'байк', 'развлечения', 'мелочи'],
+            categories: ['еда', 'продукты', 'алкоголь', 'красота', 'здоровье', 'спорт', 'шоппинг', 'транспорт', 'байк', 'развлечения', 'мелочи', 'стирка'],
             form: {
                 amount: 0,
                 category: '',
@@ -72,8 +73,15 @@ const app = Vue.createApp({
                     localStorage.setItem('gapi_token', JSON.stringify(token))
                     resolve()
                 }
-                // Запрашиваем новый токен без окна входа
-                this._tokenClient.requestAccessToken({ prompt: '' })
+                // Запрашиваем новый токен
+                try {
+                    this._tokenClient.requestAccessToken({ prompt: '' })
+                } catch (e) {
+                    // Попап заблокирован — показываем кнопку
+                    this.sessionExpired = true
+                    reject(e)
+                }
+
             })
         },
         async apiRequest(requestFn) {
@@ -83,8 +91,14 @@ const app = Vue.createApp({
             } catch (e) {
                 // Если токен протух — обновляем и повторяем
                 if (e.status === 401) {
-                    await this.refreshToken()
-                    return await requestFn()
+                    try {
+                        await this.refreshToken()
+                        return await requestFn()
+                    } catch (err) {
+                        // Если тихое обновление не вышло — показываем кнопку
+                        this.sessionExpired = true
+                        throw err
+                    }
                 }
                 throw e
             }
@@ -240,8 +254,18 @@ const app = Vue.createApp({
         const savedToken = localStorage.getItem('gapi_token')
         if (savedToken) {
             gapi.client.setToken(JSON.parse(savedToken))
-            this.isSignedIn = true
-            await this.loadExpenses()
+            console.log('Проверяем есть ли сохранённый токен...')
+            try {
+                // Пробуем загрузить данные — если токен протух словим 401
+                this.isSignedIn = true
+                await this.loadExpenses()
+                console.log('Сохраненный токен подходит :)')
+            } catch (e) {
+                // Токен протух — тихо обновляем
+                await this.refreshToken()
+                await this.loadExpenses()
+                console.log('Токен протух - тихо обновили')
+            }
         }
     }
 })

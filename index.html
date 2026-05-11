@@ -96,6 +96,11 @@
                     <span class="month-total">{{ formatAmount(monthTotal) }} ฿</span>
                 </div>
             </div>
+
+            <div v-if="sessionExpired" class="session-banner">
+                Сессия истекла
+                <button @click="signIn">Обновить</button>
+            </div>
         </div>
 
     </div>
