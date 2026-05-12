@@ -393,7 +393,6 @@ select {
     gap: 0.4rem;
     max-height: 40vh;
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
     padding: 0 0.3rem;
 }
 
@@ -440,7 +439,6 @@ select {
 .month-spend-box {
     max-height: 30vh;
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
     padding: 0 0.3rem;
 }
 
