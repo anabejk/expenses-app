@@ -5,6 +5,7 @@
     <meta name="viewport"
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="format-detection" content="telephone=no">
     <title>Расходы</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -96,12 +97,14 @@
 
                 <div class="form-field category">
                     <label for="category">Категория</label>
-                    <select id="category" v-model="form.category">
-                        <option value="" disabled>выбрать</option>
-                        <option v-for="category in sortedCategories" :value="category" :key="category">
-                            {{ category }}
-                        </option>
-                    </select>
+                    <div class="select-wrapper">
+                        <select class="select" id="category" v-model="form.category">
+                            <option value="" disabled>выбрать</option>
+                            <option v-for="category in sortedCategories" :value="category" :key="category">
+                                {{ category }}
+                            </option>
+                        </select>
+                    </div>
 
                     <!-- Добавить новую категорию -->
                     <button class="btn btn-link" type="button" @click="openTabCategory">{{ openNewCategory ? 'закрыть' : '+ добавить' }}</button>

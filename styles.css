@@ -26,6 +26,7 @@
     --font: 'Manrope', sans-serif;
     --radius: 14px;
     --radius-sm: 8px;
+    color-scheme: light dark;
 }
 
 [v-cloak] {
@@ -39,6 +40,13 @@ body {
     min-height: 100vh;
     font-size: 16px;
     line-height: 1.5;
+}
+
+/* RESET */
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
 }
 
 /* AUTH, REFRESH */
@@ -276,6 +284,26 @@ body {
 .form-field.category {
     margin-bottom: 1rem;
 }
+.select-wrapper {
+    position: relative;
+}
+
+.select-wrapper::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 0.7rem;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: translateY(-70%) rotate(45deg);
+    pointer-events: none;
+}
+
+.select-wrapper .select {
+    cursor: pointer;
+}
 
 .form-field.comment {
     margin-bottom: 1.5rem;
@@ -301,6 +329,7 @@ body {
     outline: none;
     transition: border-color 0.2s;
     width: 100%;
+    min-height: 5vh;
 }
 
 .field input:focus,
@@ -364,6 +393,18 @@ body {
     gap: 0.4rem;
     max-height: 40vh;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 0.3rem;
+}
+.expense-list::-webkit-scrollbar {
+    width: 0.3rem;
+}
+.expense-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+.expense-list::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 1rem;
 }
 
 .expense-item {
@@ -409,6 +450,7 @@ body {
 .month-spend-box {
     max-height: 30vh;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .month-spend {

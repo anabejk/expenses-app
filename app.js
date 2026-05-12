@@ -45,7 +45,7 @@ const app = Vue.createApp({
                     // Сохраняем токен в localStorage
                     const token = gapi.client.getToken()
                     localStorage.setItem('gapi_token', JSON.stringify(token))
-                    console.log('Токен для входа:', localStorage.getItem('gapi_token'))
+                    console.log('Токен для входа получен')
 
                     this.isSignedIn = true
 
