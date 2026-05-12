@@ -346,7 +346,6 @@ select {
 .new-category-row {
     display: flex;
     gap: 0.5rem;
-    margin-top: 0.5rem;
 }
 
 .new-category-row input {
@@ -391,9 +390,10 @@ select {
     flex-direction: column;
     gap: 0.4rem;
     max-height: 40vh;
-    overflow-y: auto;
+    overflow-y: scroll;
     padding: 0 0.3rem;
-    color-scheme: light;
+    background: #ffffff;
+    color-scheme: light !important;
 }
 
 .expense-item {
@@ -438,9 +438,10 @@ select {
 
 .month-spend-box {
     max-height: 30vh;
-    overflow-y: auto;
+    overflow-y: scroll;
     padding: 0 0.3rem;
-    color-scheme: light;
+    background: #ffffff;
+    color-scheme: light !important;
 }
 
 .month-spend {
