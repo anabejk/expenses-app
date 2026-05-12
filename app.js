@@ -17,11 +17,17 @@ const app = Vue.createApp({
             errorMsg: '',
             allExpenses: [],
             categories: ['еда', 'продукты', 'алкоголь', 'красота', 'здоровье', 'спорт', 'шоппинг', 'транспорт', 'байк', 'развлечения', 'мелочи', 'стирка'],
+            newCategory: '',
             form: {
+                date: '',
                 amount: 0,
                 category: '',
                 comment: ''
-            }
+            },
+            amountError: false,
+            openNewCategory: false,
+            isMonthDetails: false,
+            monthLimit: 55000
         }
     },
     methods: {
@@ -60,45 +66,16 @@ const app = Vue.createApp({
             localStorage.removeItem('gapi_token')
             this.isSignedIn = false
         },
-        refreshToken() {
-            return new Promise((resolve, reject) => {
-                // Меняем callback на одноразовый который просто резолвит промис
-                this._tokenClient.callback = async (resp) => {
-                    if (resp.error) {
-                        reject(resp.error)
-                        return
-                    }
-                    // Сохраняем новый токен
-                    const token = gapi.client.getToken()
-                    localStorage.setItem('gapi_token', JSON.stringify(token))
-                    resolve()
-                }
-                // Запрашиваем новый токен
-                try {
-                    this._tokenClient.requestAccessToken({ prompt: '' })
-                } catch (e) {
-                    // Попап заблокирован — показываем кнопку
-                    this.sessionExpired = true
-                    reject(e)
-                }
-
-            })
-        },
         async apiRequest(requestFn) {
             try {
                 // Пробуем выполнить запрос
                 return await requestFn()
             } catch (e) {
-                // Если токен протух — обновляем и повторяем
+                // Если токен протух — показываем баннер с кнопкой
                 if (e.status === 401) {
-                    try {
-                        await this.refreshToken()
-                        return await requestFn()
-                    } catch (err) {
-                        // Если тихое обновление не вышло — показываем кнопку
-                        this.sessionExpired = true
-                        throw err
-                    }
+                    this.sessionExpired = true
+                    this.isSignedIn = false
+                    throw e
                 }
                 throw e
             }
@@ -119,7 +96,7 @@ const app = Vue.createApp({
                         valueInputOption: 'RAW',            // писать как есть, без форматирования
                         resource: {                         // массив строк, каждая строка — массив ячеек
                             values: [[
-                                this.todayDate,            // A: дата
+                                this.form.date,            // A: дата
                                 this.form.amount,          // B: сумма
                                 this.form.category,        // C: категория
                                 this.form.comment,         // D: комментарий
@@ -129,7 +106,7 @@ const app = Vue.createApp({
                 )
 
                 this.successMsg = 'Сохранено ✓'
-                this.form = { amount: 0, category: '', comment: '' }
+                this.form = { date: this.form.date, amount: 0, category: '', comment: '' }
                 await this.loadExpenses()
                 setTimeout(() => { this.successMsg = '' }, 2500)
 
@@ -158,22 +135,76 @@ const app = Vue.createApp({
                     comment:  row[3] || '',
                 }))
             } catch (e) {
-                this.errorMsg = 'Ошибка загрузки: ' + e.message
+                this.errorMsg = 'Ошибка загрузки: ' + (e.message || e.result?.error?.message || 'неизвестная ошибка')
+                throw e
             }
         },
 
         formatAmount(n) {
             return n.toLocaleString('ru-RU')
         },
+        inputValidation(){
+            if (typeof this.form.amount !== 'number') {
+                console.log('Это не число!')
+                this.amountError = true
+            } else {
+                this.amountError = false
+            }
+        },
+        openTabCategory() {
+            if (this.openNewCategory) {
+                this.openNewCategory = false
+            } else {
+                this.openNewCategory = true
+            }
+        },
+        addNewCategory() {
+            const category = this.newCategory.trim()
+
+            if (!category) return
+            console.log(category)
+
+            if (this.categories.includes(category)) {
+                this.form.category = category
+                this.newCategory = ''
+                return
+            }
+            this.categories.push(category)
+
+            this.form.category = category
+
+            this.newCategory = ''
+            this.openNewCategory = false
+        },
+        toggleMonthDetails() {
+            this.isMonthDetails = !this.isMonthDetails
+        },
+        // Цвет для сумм по дням
+        daysColorClass(value) {
+            if (value <= 1500) return 'color-green'
+            if (value > 1500 && value <= 3000) return 'color-yellow'
+            return 'color-red'
+        }
     },
     computed: {
         // Настройки для текущей даты
         today() {
-            return new Date()
+            const now = new Date()
+            return new Date(now.toLocaleString('en-US', {
+                timeZone: 'Asia/Bangkok'
+            }))
         },
         todayDate() {
-            return this.today.toLocaleDateString('sv-SE', {
+            const now = new Date()
+            return now.toLocaleDateString('sv-SE', {
                 timeZone: 'Asia/Bangkok'
+            })
+        },
+        todayFormatted() {
+            return this.today.toLocaleDateString('ru-RU', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
             })
         },
         currentMonthName() {
@@ -185,6 +216,9 @@ const app = Vue.createApp({
             return raw
                 .replace(' г.', '')
                 .replace(/^./, c => c.toLowerCase())
+        },
+        daysPassed() {
+            return this.today.getDate()
         },
         // Сортировка списка категорий по алфавиту
         sortedCategories() {
@@ -216,7 +250,7 @@ const app = Vue.createApp({
         },
         // Сумма за сегодня
         todayTotal() {
-            return this.dailyTotals[this.todayDate] || 0
+            return this.dailyTotals[this.form.date] || 0
         },
         // Сумма за месяц
         monthTotal() {
@@ -232,8 +266,32 @@ const app = Vue.createApp({
         },
         // Все расходы сегодня детально
         todayExpenses() {
-            return this.allExpenses.filter(e => e.date === this.todayDate)
+            return this.allExpenses.filter(e => e.date === this.form.date)
         },
+        // Цвет прогресс-бара
+        progressColor() {
+            // Сколько процентов бюджета уже потрачено
+            const spentPercent = (this.monthTotal / this.monthLimit) * 100
+
+            if (spentPercent <= 40) {
+                return 'prog-green'
+            } else if (spentPercent <= 80) {
+                return 'prog-yellow'
+            } else {
+                return 'prog-red'
+            }
+        },
+        // Статистика дней
+        greenDays() {
+            return Object.values(this.dailyTotals).filter(n => n <= 1500).length
+        },
+        yellowDays() {
+            return Object.values(this.dailyTotals).filter(n => n > 1500 && n <= 3000).length
+        },
+        redDays() {
+            return Object.values(this.dailyTotals).filter(n => n > 3000).length
+        },
+        // Кнопка посмотреть все траты за месяц
     },
     async mounted() {
         // Загружаем клиент Google API
@@ -261,12 +319,16 @@ const app = Vue.createApp({
                 await this.loadExpenses()
                 console.log('Сохраненный токен подходит :)')
             } catch (e) {
-                // Токен протух — тихо обновляем
-                await this.refreshToken()
-                await this.loadExpenses()
-                console.log('Токен протух - тихо обновили')
+                // Токен протух — показываем баннер с кнопкой
+                console.log('Токен протух - показываем баннер с кнопкой')
+                this.isSignedIn = false
+                this.sessionExpired = true
+                this.errorMsg = ''
             }
         }
+
+        // Когда computed уже доступны — устанавливаем дату
+        this.form.date = this.todayDate
     }
 })
 
