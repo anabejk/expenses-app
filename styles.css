@@ -32,10 +32,6 @@
     display: none;
 }
 
-html {
-    color-scheme: dark;
-}
-
 body {
     font-family: var(--font);
     background: var(--bg);
@@ -397,6 +393,7 @@ select {
     max-height: 40vh;
     overflow-y: auto;
     padding: 0 0.3rem;
+    color-scheme: light;
 }
 
 .expense-item {
@@ -443,6 +440,7 @@ select {
     max-height: 30vh;
     overflow-y: auto;
     padding: 0 0.3rem;
+    color-scheme: light;
 }
 
 .month-spend {
@@ -539,10 +537,6 @@ select {
     padding: 0.2rem 0;
     cursor: pointer;
     text-align: left;
-}
-
-.btn-link:hover {
-    text-decoration: underline;
 }
 
 /* SCROLL-BAR */
