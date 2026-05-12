@@ -396,16 +396,6 @@ select {
     -webkit-overflow-scrolling: touch;
     padding: 0 0.3rem;
 }
-.expense-list::-webkit-scrollbar {
-    width: 0.3rem;
-}
-.expense-list::-webkit-scrollbar-track {
-    background: transparent;
-}
-.expense-list::-webkit-scrollbar-thumb {
-    background: var(--accent);
-    border-radius: 1rem;
-}
 
 .expense-item {
     display: flex;
@@ -451,6 +441,7 @@ select {
     max-height: 30vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    padding: 0 0.3rem;
 }
 
 .month-spend {
@@ -551,4 +542,19 @@ select {
 
 .btn-link:hover {
     text-decoration: underline;
+}
+
+/* SCROLL-BAR */
+.expense-list::-webkit-scrollbar,
+.month-spend-box::-webkit-scrollbar {
+    width: 0.3rem;
+}
+.expense-list::-webkit-scrollbar-track,
+.month-spend-box::-webkit-scrollbar-track {
+    background: transparent;
+}
+.expense-list::-webkit-scrollbar-thumb,
+.month-spend-box::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 1rem;
 }
