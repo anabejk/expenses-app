@@ -107,7 +107,7 @@
                     </div>
 
                     <!-- Добавить новую категорию -->
-                    <button class="btn btn-link" type="button" @click="openTabCategory">{{ openNewCategory ? 'закрыть' : '+ добавить скролл' }}</button>
+                    <button class="btn btn-link" type="button" @click="openTabCategory">{{ openNewCategory ? 'закрыть' : '+ добавить схему' }}</button>
                     <div v-if="openNewCategory" class="new-category-row">
                         <input type="text" v-model="newCategory"/>
                         <button class="btn btn-minor" type="button" @click="addNewCategory">Создать</button>

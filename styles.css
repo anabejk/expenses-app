@@ -26,11 +26,14 @@
     --font: 'Manrope', sans-serif;
     --radius: 14px;
     --radius-sm: 8px;
-    color-scheme: light dark;
 }
 
 [v-cloak] {
     display: none;
+}
+
+html {
+    color-scheme: dark;
 }
 
 body {
