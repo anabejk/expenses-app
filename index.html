@@ -15,17 +15,21 @@
     <div class="container" id="app" v-cloak>
 
         <!-- Авторизация -->
-        <div v-if="!isSignedIn & !sessionExpired" class="auth-screen">
+        <div v-if="!isSignedIn" class="auth-screen">
             <div class="auth-card">
                 <div class="logo">฿</div>
-                <h1>Расходы</h1>
-                <p>Войди через Google чтобы начать</p>
-                <button class="btn btn-primary" @click="signIn" :disabled="!isAuthReady">Войти через Google</button>
+                <h1 class="title">Расходы</h1>
+                <p class="subtitle" v-if="!sessionExpired">Войди через Google чтобы начать</p>
+                <div v-if="errorAlert" class="error-alert-msg">
+                    <span>{{ errorAlert.title }}</span>
+                    <span>{{ errorAlert.message }}</span>
+                </div>
+                <button class="btn btn-primary" @click="signIn" :disabled="!isAuthReady">{{ sessionExpired ? 'Обновить авторизацию' : 'Войти через Google' }}</button>
             </div>
         </div>
 
         <!-- Основное приложение -->
-        <div v-else-if="isSignedIn" class="app-layout">
+        <div v-else class="app-layout">
 
             <!-- Шапка -->
             <header class="app-header">
@@ -126,22 +130,30 @@
                     <span v-else>Добавить в таблицу</span>
                 </button>
                 <div v-if="successMsg" class="success-msg">{{ successMsg }}</div>
-                <div v-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
+                <div v-if="errorAlert" class="error-alert-msg">
+                    <span>{{ errorAlert.title }}</span>
+                    <span>{{ errorAlert.message }}</span>
+                </div>
             </form>
 
             <!-- Траты сегодня -->
-            <div class="today-block" >
+            <div v-if="todayExpenses.length === 0" class="today-empty-block">
+                В этот день трат нет
+            </div>
+            <div v-else class="today-block" >
                 <div class="today-header">
                     <span class="today-title">Сегодня: </span>
                     <span class="today-total" :class="todayColorClass">{{ formatAmount(todayTotal) }} ฿</span>
                 </div>
                 <div class="expense-list">
-                    <div class="expense-item" v-for="(exp, i) in todayExpenses" :key="i">
+                    <div class="expense-item" v-for="(exp, i) in todayExpenses" :key="exp.rowIndex">
                         <div class="exp-left">
                             <span class="exp-cat">{{ exp.category }}</span>
                             <span class="exp-comment">{{ exp.comment }}</span>
                         </div>
                         <span class="exp-amount">{{ formatAmount(exp.amount) }} ฿</span>
+<!--                        <button type="button" @click="deleteExpense(exp)">Удалить</button>-->
+                        <button class="btn btn-delete" type="button" @click="deleteExpense(exp)" title="Удалить расход">🗑️</button>
                     </div>
                 </div>
             </div>
@@ -164,14 +176,6 @@
                 </div>
             </div>
 
-        </div>
-
-        <!-- Обновление сессии -->
-        <div v-if="sessionExpired" class="refresh-screen">
-            <div class="refresh-card">
-                <button class="btn btn-primary" @click="signIn">Обновить</button>
-                <p>Сессия истекла</p>
-            </div>
         </div>
 
     </div>

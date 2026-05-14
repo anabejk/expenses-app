@@ -3,7 +3,7 @@ const CONFIG = {
     CLIENT_ID: '498065444641-579mb2qst5nnpfm1caahmvmssoep4i4d.apps.googleusercontent.com',
     API_KEY: 'AIzaSyCwJDT0Nh0rguA-8gdE0XoRjZF3H_BtpZA',
     SHEET_ID: '1v_scBNE13oh5jVaOQJSzSv5kJYzZre1unkIOWitOvos',
-    SHEET_NAME: 'Лист1',
+    SHEET_NAME: 'Май-2026',
 }
 
 const app = Vue.createApp({
@@ -14,7 +14,7 @@ const app = Vue.createApp({
             isSaving: false,
             sessionExpired: false,
             successMsg: '',
-            errorMsg: '',
+            errorAlert: null,
             allExpenses: [],
             categories: ['еда', 'продукты', 'алкоголь', 'красота', 'здоровье', 'спорт', 'шоппинг', 'транспорт', 'байк', 'развлечения', 'мелочи', 'стирка'],
             newCategory: '',
@@ -39,18 +39,15 @@ const app = Vue.createApp({
                 prompt: '',
                 callback: async (resp) => {
                     if (resp.error) {
-                        this.errorMsg = 'Ошибка авторизации'
+                        this.errorAlert = this.getReadableError(e)
                         return
                     }
                     // Сохраняем токен в localStorage
                     const token = gapi.client.getToken()
                     localStorage.setItem('gapi_token', JSON.stringify(token))
                     console.log('Токен для входа получен')
-
                     this.isSignedIn = true
-
                     await this.loadExpenses()
-
                     console.log('Вход успешен')
                 },
             })
@@ -58,6 +55,7 @@ const app = Vue.createApp({
         },
         signIn() {
             this._tokenClient.requestAccessToken({ prompt: 'consent' })
+            this.errorAlert = null
         },
         signOut() {
             const token = gapi.client.getToken()
@@ -65,6 +63,7 @@ const app = Vue.createApp({
             gapi.client.setToken(null)
             localStorage.removeItem('gapi_token')
             this.isSignedIn = false
+            this.sessionExpired = false
         },
         async apiRequest(requestFn) {
             try {
@@ -80,12 +79,12 @@ const app = Vue.createApp({
                 throw e
             }
         },
-
+        // Редактирование и получение данных с Google табицы
         async addExpense() {
             if (!this.form.amount || !this.form.category) return
 
             this.isSaving = true
-            this.errorMsg = ''
+            this.errorAlert = null
             this.successMsg = ''
 
             try {
@@ -108,15 +107,14 @@ const app = Vue.createApp({
                 this.successMsg = 'Сохранено ✓'
                 this.form = { date: this.form.date, amount: 0, category: '', comment: '' }
                 await this.loadExpenses()
-                setTimeout(() => { this.successMsg = '' }, 2500)
 
             } catch (e) {
-                this.errorMsg = 'Ошибка: ' + e.message
+                this.errorAlert = this.getReadableError(e)
             } finally {
+                this.successMsg = ''
                 this.isSaving = false
             }
         },
-
         async loadExpenses() {
             try {
                 const resp = await this.apiRequest(() =>
@@ -128,15 +126,62 @@ const app = Vue.createApp({
 
                 const rows = resp.result.values || []
                 // Пропускаем первую строку с заголовками
-                this.allExpenses = rows.slice(1).map(row => ({
+                this.allExpenses = rows.slice(1).map((row, index) => ({
+                    rowIndex: index + 1,
                     date:     row[0] || '',
                     amount:   row[1] || 0,
                     category: row[2] || '',
                     comment:  row[3] || '',
                 }))
             } catch (e) {
-                this.errorMsg = 'Ошибка загрузки: ' + (e.message || e.result?.error?.message || 'неизвестная ошибка')
+                this.errorAlert = this.getReadableError(e)
                 throw e
+            }
+        },
+        async deleteExpense(expense) {
+            const confirmed = confirm(
+                `Удалить "${expense.category}" • ${expense.amount} ฿ ?`
+            )
+            if (!confirmed) return
+
+            console.group('Удаляем...')
+
+            console.log('Строка в Google:', expense.rowIndex)
+            console.log('Дата:', expense.date)
+            console.log('Сумма:', expense.amount)
+            console.log('Категория:', expense.category)
+            console.log('Комментарий:', expense.comment)
+
+            console.groupEnd()
+
+            try {
+                await this.apiRequest(() =>
+                    gapi.client.sheets.spreadsheets.batchUpdate({
+                        spreadsheetId: CONFIG.SHEET_ID,
+
+                        resource: {
+                            requests: [
+                                {
+                                    deleteDimension: {
+                                        range: {
+                                            sheetId: 0,
+                                            dimension: 'ROWS',
+
+                                            startIndex: expense.rowIndex,
+                                            endIndex: expense.rowIndex + 1
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    })
+                )
+                console.log('Трата удалена!')
+
+                await this.loadExpenses()
+
+            } catch (error) {
+                this.errorAlert = this.getReadableError(error)
             }
         },
 
@@ -184,6 +229,55 @@ const app = Vue.createApp({
             if (value <= 1500) return 'color-green'
             if (value > 1500 && value <= 3000) return 'color-yellow'
             return 'color-red'
+        },
+
+        getReadableError(error) {
+            const code = error?.status || error?.result?.error?.code
+
+            switch (code) {
+                case 401:
+                    return {
+                        title: 'Сессия истекла',
+                        status: 401,
+                        message: 'Нужно войти заново'
+                    }
+
+                case 403:
+                    return {
+                        title: 'Нет доступа',
+                        status: 403,
+                        message: 'Проверьте Google аккаунт'
+                    }
+
+                case 404:
+                    return {
+                        title: 'Таблица не найдена',
+                        status: 404,
+                        message: 'Проверьте настройки приложения'
+                    }
+
+                case 429:
+                    return {
+                        title: 'Слишком много запросов',
+                        status: 429,
+                        message: 'Попробуйте через несколько секунд'
+                    }
+
+                case 500:
+                case 503:
+                    return {
+                        title: 'Сервис временно недоступен',
+                        status: code,
+                        message: 'Попробуйте позже'
+                    }
+
+                default:
+                    return {
+                        title: 'Что-то пошло не так',
+                        status: code || 'неизвестная ошибка',
+                        message: 'Попробуйте повторить действие'
+                    }
+            }
         }
     },
     computed: {
@@ -319,11 +413,14 @@ const app = Vue.createApp({
                 await this.loadExpenses()
                 console.log('Сохраненный токен подходит :)')
             } catch (e) {
-                // Токен протух — показываем баннер с кнопкой
-                console.log('Токен протух - показываем баннер с кнопкой')
+                // Токен протух — показываем окно обновления
+                console.log('Токен протух - показываем окно обновления')
+
+                // Обработка ошибки
+                this.errorAlert = this.getReadableError(e)
+
                 this.isSignedIn = false
                 this.sessionExpired = true
-                this.errorMsg = ''
             }
         }
 
