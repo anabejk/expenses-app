@@ -424,7 +424,7 @@ const app = Vue.createApp({
         dailyTotals() {
             const map = {}
 
-            this.allExpenses.forEach(e => {
+            this.filteredExpenses.forEach(e => {
                 const date = e.date
 
                 const amount = Number(e.amount)
