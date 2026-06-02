@@ -35,15 +35,23 @@
             <header class="app-header">
                 <div class="header-left">
                     <span class="logo-small">฿</span>
-                    <span class="month-label">Расходы: {{ currentMonthName }}</span>
+                    <label for="month" class="month-label">Расходы: </label>
+                    <div class="select-wrapper">
+                        <select class="select" id="month" v-model="selectedMonth" @change="changeMonth">
+                            <option v-for="m in availableMonths" :key="m.value" :value="m.value">
+                                {{ m.label }}
+                            </option>
+                        </select>
+                    </div>
                 </div>
                 <button class="btn btn-signout" @click="signOut">Выйти</button>
             </header>
 
+
             <!-- Прогресс-бар лимита -->
             <div class="limit-block">
                 <div class="limit-row">
-                    <span class="limit-label">Потрачено в: {{ currentMonthName }}</span>
+                    <span class="limit-label">Потрачено в: {{ selectedMonthName }}</span>
                     <span class="limit-amount">{{ formatAmount(monthTotal) }} ฿ / {{ formatAmount(monthLimit) }} ฿</span>
                 </div>
                 <div class="progress-track">
@@ -56,11 +64,14 @@
                 <div class="limit-remaining" :class="{ danger: monthTotal > monthLimit }">
                     {{ monthTotal > monthLimit ? 'Лимит превышен на ' + formatAmount(monthTotal - monthLimit) + ' ฿' : 'Осталось ' + formatAmount(monthLimit - monthTotal) + ' ฿' }}
                 </div>
-                <div class="days-passed">
+                <div class="days-in-month" v-if="selectedMonth !== currentMonthKey">
+                    Всего дней в месяце: {{ getDaysInMonth }}
+                </div>
+                <div class="days-passed" v-else>
                     Всего дней: {{ daysPassed }}
                 </div>
                 <div class="days-average">
-                    В среднем за день тратим: {{ formatAmount(monthTotal / daysPassed) }} ฿
+                    В среднем за день тратим: {{ formatAmount(monthTotal / (selectedMonth !== currentMonthKey ? getDaysInMonth : daysPassed)) }} ฿
                 </div>
             </div>
 
@@ -137,7 +148,7 @@
             </form>
 
             <!-- Траты сегодня -->
-            <div v-if="todayExpenses.length === 0" class="today-empty-block">
+            <div v-if="todayExpenses.length === 0" class="today-empty-block" >
                 В этот день трат нет
             </div>
             <div v-else class="today-block" >

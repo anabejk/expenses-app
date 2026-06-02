@@ -3,7 +3,7 @@ const CONFIG = {
     CLIENT_ID: '498065444641-579mb2qst5nnpfm1caahmvmssoep4i4d.apps.googleusercontent.com',
     API_KEY: 'AIzaSyCwJDT0Nh0rguA-8gdE0XoRjZF3H_BtpZA',
     SHEET_ID: '1v_scBNE13oh5jVaOQJSzSv5kJYzZre1unkIOWitOvos',
-    SHEET_NAME: 'Май-2026',
+    SHEET_NAME: 'Все расходы',
 }
 
 const app = Vue.createApp({
@@ -16,7 +16,7 @@ const app = Vue.createApp({
             successMsg: '',
             errorAlert: null,
             allExpenses: [],
-            categories: ['еда', 'продукты', 'алкоголь', 'красота', 'здоровье', 'спорт', 'шоппинг', 'транспорт', 'байк', 'развлечения', 'мелочи', 'стирка'],
+            categories: ['еда', 'продукты', 'алкоголь', 'красота', 'здоровье', 'спорт', 'шоппинг', 'транспорт', 'байк', 'развлечения', 'мелочи', 'стирка', 'быт'],
             newCategory: '',
             form: {
                 date: '',
@@ -27,7 +27,10 @@ const app = Vue.createApp({
             amountError: false,
             openNewCategory: false,
             isMonthDetails: false,
-            monthLimit: 55000
+            monthLimit: 55000,
+            selectedMonth: '',
+            selectedMonthName: '',
+            availableMonths: [],
         }
     },
     methods: {
@@ -79,7 +82,7 @@ const app = Vue.createApp({
                 throw e
             }
         },
-        // Редактирование и получение данных с Google табицы
+        // Редактирование и получение данных с Google таблицы
         async addExpense() {
             if (!this.form.amount || !this.form.category) return
 
@@ -133,6 +136,9 @@ const app = Vue.createApp({
                     category: row[2] || '',
                     comment:  row[3] || '',
                 }))
+
+                await this.loadAvailableMonths();
+
             } catch (e) {
                 this.errorAlert = this.getReadableError(e)
                 throw e
@@ -183,6 +189,56 @@ const app = Vue.createApp({
             } catch (error) {
                 this.errorAlert = this.getReadableError(error)
             }
+        },
+        async loadAvailableMonths() {
+            console.log('=== Начинаем loadAvailableMonths ===');
+            console.log('Всего расходов в allExpenses:', this.allExpenses.length);
+
+            let months = []
+
+            this.allExpenses.forEach((exp, index) => {
+                if (exp.date && exp.date.length >= 7) {
+                    const monthKey = exp.date.substring(0, 7)
+
+                    if (!months.includes(monthKey)) {
+                        months.push(monthKey);
+                        console.log(`   → Добавлен новый месяц: ${monthKey}`);
+                    }
+                }
+            })
+            console.log('Месяцы перед сортировкой:', months);
+            months.sort().reverse()
+            console.log('Месяцы после сортировки:', months);
+
+            this.availableMonths = months.map(value => {
+                const [year, month] = value.split('-')
+                const date = new Date(year, parseInt(month) - 1)
+
+                return {
+                    value: value,
+                    label: date.toLocaleDateString('ru-RU', {
+                        month: 'long',
+                        year: 'numeric'
+                    }).replace(' г.', '')
+                }
+            })
+
+            console.log('Итоговый availableMonths перед проверкой на новый месяц:', this.availableMonths);
+
+
+            if(!this.availableMonths.some(m => m.value === this.currentMonthKey )) {
+                this.availableMonths.unshift({
+                    value: this.currentMonthKey,
+                    label: this.currentMonthName
+                })
+                console.log('Итоговый availableMonths после проверки на новый месяц:', this.availableMonths);
+            }
+
+            this.selectedMonth = this.availableMonths[0].value;
+            this.selectedMonthName = this.availableMonths[0].label;
+
+            console.log(this.selectedMonth)
+            console.log('=== loadAvailableMonths завершён ===');
         },
 
         formatAmount(n) {
@@ -278,21 +334,32 @@ const app = Vue.createApp({
                         message: 'Попробуйте повторить действие'
                     }
             }
+        },
+        changeMonth(){
+            console.log(this.selectedMonth)
+            this.selectedMonthName = this.availableMonths.find(m => m.value === this.selectedMonth).label
         }
     },
     computed: {
-        // Настройки для текущей даты
+        // Настройки для текущей даты по тайм-зоне Бангкока
         today() {
             const now = new Date()
             return new Date(now.toLocaleString('en-US', {
                 timeZone: 'Asia/Bangkok'
             }))
         },
-        todayDate() {
+        //Дата в формате YYYY-MM-DD которую мы устанавливаем по умолчанию (тайм-зона Бангкок)
+        todayFullDate() {
             const now = new Date()
             return now.toLocaleDateString('sv-SE', {
                 timeZone: 'Asia/Bangkok'
             })
+        },
+        //Текущий год и месяц в формате YYYY-MM (тайм-зона Бангкок)
+        currentMonthKey() {
+            const year = this.today.getFullYear()
+            const month = String(this.today.getMonth() + 1).padStart(2, '0')
+            return `${year}-${month}`
         },
         todayFormatted() {
             return this.today.toLocaleDateString('ru-RU', {
@@ -314,17 +381,29 @@ const app = Vue.createApp({
         daysPassed() {
             return this.today.getDate()
         },
+        getDaysInMonth() {
+            const [ year, month ] = this.selectedMonth.split('-').map(Number)
+            return new Date(year, month, 0).getDate()
+        },
         // Сортировка списка категорий по алфавиту
         sortedCategories() {
             return [...this.categories].sort((a, b) =>
                 a.localeCompare(b, 'ru')
             );
         },
+        // Фильтр расходов в зависимости от выбраного месяца (текущий по умолчанию)
+        filteredExpenses() {
+            if (!this.selectedMonth) return this.allExpenses;
+
+            return this.allExpenses.filter(exp =>
+                exp.date && exp.date.startsWith(this.selectedMonth)
+            );
+        },
         // Группировка всех трат по датам и подсчёт суммы за каждый день
         dailyTotals() {
             const map = {}
 
-            this.allExpenses.forEach(e => {
+            this.filteredExpenses.forEach(e => {
                 const date = e.date
 
                 const amount = Number(e.amount)
@@ -348,8 +427,8 @@ const app = Vue.createApp({
         },
         // Сумма за месяц
         monthTotal() {
-            return this.allExpenses.reduce((acc, item) => {
-                return acc + Number(item.amount);
+            return this.filteredExpenses.reduce((acc, item) => {
+                return acc + Number(item.amount || 0 );
             }, 0);
         },
         // Цвет для сегодняшней суммы
@@ -425,7 +504,14 @@ const app = Vue.createApp({
         }
 
         // Когда computed уже доступны — устанавливаем дату
-        this.form.date = this.todayDate
+        this.form.date = this.todayFullDate
+
+        //Отладка
+        console.log('Дата в формате YYYY-MM-DD которую мы устанавливаем по умолчанию: ', this.todayFullDate)
+        console.log('Текущий год и месяц в формате YYYY-MM: ', this.currentMonthKey)
+        this.loadAvailableMonths()
+        console.log('Стартовый месяц для подсчета: ',typeof this.selectedMonth)
+        console.log('Сумма за день', this.dailyTotals)
     }
 })
 
