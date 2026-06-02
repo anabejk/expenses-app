@@ -51,9 +51,12 @@ input[type="date"] {
     -webkit-appearance: none;
     appearance: none;
 }
+ul {
+    list-style: none;
+}
 
-/* AUTH, REFRESH */
-.auth-screen, .refresh-screen {
+/* AUTH */
+.auth-screen {
     min-height: 100dvh;
     display: flex;
     align-items: center;
@@ -61,7 +64,7 @@ input[type="date"] {
     padding: 1rem;
 }
 
-.auth-card, .refresh-card {
+.auth-card {
     background: var(--card);
     border-radius: var(--radius);
     padding: 2.5rem 2rem;
@@ -89,11 +92,6 @@ input[type="date"] {
     margin-bottom: 1.5rem;
     font-size: 0.9rem;
 }
-.refresh-card p {
-    color: var(--text-muted);
-    font-size: 0.8rem;
-    margin-top: 1rem;
-}
 
 /* LAYOUT */
 .app-layout {
@@ -102,6 +100,52 @@ input[type="date"] {
     min-height: 100dvh;
     height: 100%;
     font-family: var(--font);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+/* NAVIGATION */
+.app-navigation {
+    position: sticky;
+    bottom: 0;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    border-radius: 1rem 1rem 0 0;
+    margin-top: auto;
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: 20;
+}
+.navigation-wrap {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 1rem;
+    height: 4rem;
+}
+.nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color .2s ease,
+    transform .15s ease;
+}
+.nav-text {
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+.nav-item.active {
+    color: var(--accent);
+}
+.nav-item:active {
+    transform: scale(0.95);
 }
 
 /* HEADER */
@@ -155,7 +199,7 @@ input[type="date"] {
     font-size: 0.8rem;
     color: var(--text-muted);
     cursor: pointer;
-    font-family: var(--font);
+    margin-left: auto;
 }
 
 .btn-signout:hover { background: var(--border); }
@@ -268,6 +312,13 @@ input[type="date"] {
 }
 
 /* FORM */
+.form-screen {
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
 .form-card {
     margin: 0 1rem 0.75rem;
     background: var(--card);
@@ -414,7 +465,7 @@ input[type="date"] {
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
-    max-height: 40vh;
+    max-height: 20rem;
     overflow-y: scroll;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;

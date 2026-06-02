@@ -33,7 +33,7 @@
 
             <!-- Шапка -->
             <header class="app-header">
-                <div class="header-left">
+                <div class="header-left" v-if="isHomeOpen || isTotalOpen">
                     <span class="logo-small">฿</span>
                     <label for="month" class="month-label">Расходы: </label>
                     <div class="select-wrapper">
@@ -47,36 +47,37 @@
                 <button class="btn btn-signout" @click="signOut">Выйти</button>
             </header>
 
+            <!-- Экран главная -->
+            <div class="app-home" v-if="isHomeOpen">
+                <!-- Прогресс-бар лимита -->
+                <div class="limit-block">
+                    <div class="limit-row">
+                        <span class="limit-label">Потрачено в: {{ selectedMonthName }}</span>
+                        <span class="limit-amount">{{ formatAmount(monthTotal) }} ฿ / {{ formatAmount(monthLimit) }} ฿</span>
+                    </div>
+                    <div class="progress-track">
+                        <progress class="progress-fill"
+                                  :value="monthTotal"
+                                  :max="monthLimit"
+                                  :class="progressColor">
+                        </progress>
+                    </div>
+                    <div class="limit-remaining" :class="{ danger: monthTotal > monthLimit }">
+                        {{ monthTotal > monthLimit ? 'Лимит превышен на ' + formatAmount(monthTotal - monthLimit) + ' ฿' : 'Осталось ' + formatAmount(monthLimit - monthTotal) + ' ฿' }}
+                    </div>
+                    <div class="days-in-month" v-if="selectedMonth !== todayMonthKey">
+                        Всего дней в месяце: {{ getDaysInMonth }}
+                    </div>
+                    <div class="days-passed" v-else>
+                        Всего дней: {{ daysPassed }}
+                    </div>
+                    <div class="days-average">
+                        В среднем за день тратим: {{ formatAmount(monthTotal / (selectedMonth !== todayMonthKey ? getDaysInMonth : daysPassed)) }} ฿
+                    </div>
+                </div>
 
-            <!-- Прогресс-бар лимита -->
-            <div class="limit-block">
-                <div class="limit-row">
-                    <span class="limit-label">Потрачено в: {{ selectedMonthName }}</span>
-                    <span class="limit-amount">{{ formatAmount(monthTotal) }} ฿ / {{ formatAmount(monthLimit) }} ฿</span>
-                </div>
-                <div class="progress-track">
-                    <progress class="progress-fill"
-                              :value="monthTotal"
-                              :max="monthLimit"
-                              :class="progressColor">
-                    </progress>
-                </div>
-                <div class="limit-remaining" :class="{ danger: monthTotal > monthLimit }">
-                    {{ monthTotal > monthLimit ? 'Лимит превышен на ' + formatAmount(monthTotal - monthLimit) + ' ฿' : 'Осталось ' + formatAmount(monthLimit - monthTotal) + ' ฿' }}
-                </div>
-                <div class="days-in-month" v-if="selectedMonth !== currentMonthKey">
-                    Всего дней в месяце: {{ getDaysInMonth }}
-                </div>
-                <div class="days-passed" v-else>
-                    Всего дней: {{ daysPassed }}
-                </div>
-                <div class="days-average">
-                    В среднем за день тратим: {{ formatAmount(monthTotal / (selectedMonth !== currentMonthKey ? getDaysInMonth : daysPassed)) }} ฿
-                </div>
-            </div>
-
-            <!-- Статистика дней -->
-            <div class="days-stats">
+                <!-- Статистика дней -->
+                <div class="days-stats">
                     <div class="day-stat green">
                         <span class="stat-count">{{ greenDays }}</span>
                         <span class="stat-label">≤ 1500 ฿</span>
@@ -90,101 +91,148 @@
                         <span class="stat-label">> 3000 ฿</span>
                     </div>
                 </div>
-
-            <!-- Форма добавления -->
-            <form class="form-card" @submit.prevent="addExpense">
-
-                <div class="form-row">
-                    <div class="form-field">
-                        <label>{{ todayFormatted }}</label>
-                        <input type="date" v-model="form.date"/>
-                    </div>
-                    <div class="form-field">
-                        <label for="amount">Сумма</label>
-                        <input id="amount"
-                               type="number"
-                               inputmode="numeric"
-                               v-model.number="form.amount"
-                               @input="inputValidation"/>
-                        <span v-if="amountError" class="warn-message">Необходимо ввести цифры</span>
-                    </div>
-                </div>
-
-                <div class="form-field category">
-                    <label for="category">Категория</label>
-                    <div class="select-wrapper">
-                        <select class="select" id="category" v-model="form.category">
-                            <option value="" disabled>выбрать</option>
-                            <option v-for="category in sortedCategories" :value="category" :key="category">
-                                {{ category }}
-                            </option>
-                        </select>
-                    </div>
-
-                    <!-- Добавить новую категорию -->
-                    <button class="btn btn-link" type="button" @click="openTabCategory">{{ openNewCategory ? 'закрыть' : '+ добавить категорию' }}</button>
-                    <div v-if="openNewCategory" class="new-category-row">
-                        <input type="text" v-model="newCategory"/>
-                        <button class="btn btn-minor" type="button" @click="addNewCategory">Создать</button>
-                    </div>
-                </div>
-
-                <div class="form-field comment">
-                    <label for="comment">Комментарий</label>
-                    <input id="comment"
-                           type="text"
-                           v-model.trim="form.comment"/>
-                </div>
-
-                <button class="btn btn-primary btn-add" type="submit" :disabled="isSaving || !form.amount || !form.category">
-                    <span v-if="isSaving">Сохраняю...</span>
-                    <span v-else>Добавить в таблицу</span>
-                </button>
-                <div v-if="successMsg" class="success-msg">{{ successMsg }}</div>
-                <div v-if="errorAlert" class="error-alert-msg">
-                    <span>{{ errorAlert.title }}</span>
-                    <span>{{ errorAlert.message }}</span>
-                </div>
-            </form>
-
-            <!-- Траты сегодня -->
-            <div v-if="todayExpenses.length === 0" class="today-empty-block" >
-                В этот день трат нет
             </div>
-            <div v-else class="today-block" >
-                <div class="today-header">
-                    <span class="today-title">Сегодня: </span>
-                    <span class="today-total" :class="todayColorClass">{{ formatAmount(todayTotal) }} ฿</span>
-                </div>
-                <div class="expense-list">
-                    <div class="expense-item" v-for="(exp, i) in todayExpenses" :key="exp.rowIndex">
-                        <div class="exp-left">
-                            <span class="exp-cat">{{ exp.category }}</span>
-                            <span class="exp-comment">{{ exp.comment }}</span>
+
+            <!-- Экран добавить -->
+            <div class="app-form" v-if="isFormOpen">
+                <!-- Форма добавления -->
+                <form class="form-card" @submit.prevent="addExpense">
+
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label>{{ currentDayName }}</label>
+                            <input type="date" v-model="form.date"/>
                         </div>
-                        <span class="exp-amount">{{ formatAmount(exp.amount) }} ฿</span>
-<!--                        <button type="button" @click="deleteExpense(exp)">Удалить</button>-->
-                        <button class="btn btn-delete" type="button" @click="deleteExpense(exp)" title="Удалить расход">🗑️</button>
+                        <div class="form-field">
+                            <label for="amount">Сумма</label>
+                            <input id="amount"
+                                   type="number"
+                                   inputmode="numeric"
+                                   v-model.number="form.amount"
+                                   @input="inputValidation"/>
+                            <span v-if="amountError" class="warn-message">Необходимо ввести цифры</span>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Траты за месяц -->
-            <div class="month-block">
-                <button class="btn btn-primary btn-all" @click="toggleMonthDetails">{{ isMonthDetails ? 'Скрыть' : 'Посмотреть все траты за месяц' }}</button>
+                    <div class="form-field category">
+                        <label for="category">Категория</label>
+                        <div class="select-wrapper">
+                            <select class="select" id="category" v-model="form.category">
+                                <option value="" disabled>выбрать</option>
+                                <option v-for="category in sortedCategories" :value="category" :key="category">
+                                    {{ category }}
+                                </option>
+                            </select>
+                        </div>
 
-                <div class="month-details" v-if="isMonthDetails">
-                    <div class="month-header">
-                        <span class="month-title">Всего за месяц: </span>
-                        <span class="month-total">{{ formatAmount(monthTotal) }} ฿</span>
+                        <!-- Добавить новую категорию -->
+                        <button class="btn btn-link" type="button" @click="openTabCategory">{{ openNewCategory ? 'закрыть' : '+ добавить категорию' }}</button>
+                        <div v-if="openNewCategory" class="new-category-row">
+                            <input type="text" v-model="newCategory"/>
+                            <button class="btn btn-minor" type="button" @click="addNewCategory">Создать</button>
+                        </div>
                     </div>
-                    <div class="month-spend-box">
-                        <div class="month-spend" v-for="(value, key) in dailyTotals" :key="key">
-                            <span class="month-day">{{ key }}</span>
-                            <span class="month-day-total" :class="daysColorClass(value)">{{ formatAmount(value) }} ฿</span>
+
+                    <div class="form-field comment">
+                        <label for="comment">Комментарий</label>
+                        <input id="comment"
+                               type="text"
+                               v-model.trim="form.comment"/>
+                    </div>
+
+                    <button class="btn btn-primary btn-add" type="submit" :disabled="isSaving || !form.amount || !form.category">
+                        <span v-if="isSaving">Сохраняю...</span>
+                        <span v-else>Добавить в таблицу</span>
+                    </button>
+                    <div v-if="successMsg" class="success-msg">{{ successMsg }}</div>
+                    <div v-if="errorAlert" class="error-alert-msg">
+                        <span>{{ errorAlert.title }}</span>
+                        <span>{{ errorAlert.message }}</span>
+                    </div>
+                </form>
+
+                <!-- Траты сегодня -->
+                <div class="today-block-wrap">
+                    <div v-if="todayExpenses.length === 0" class="today-empty-block">
+                        В этот день трат нет
+                    </div>
+                    <div v-else class="today-block">
+                        <div class="today-header">
+                            <span class="today-title">{{ form.date === todayFullDate ? 'Сегодня:' : currentDayName }}</span>
+                            <span class="today-total" :class="todayColorClass">{{ formatAmount(todayTotal) }} ฿</span>
+                        </div>
+                        <div class="expense-list">
+                            <div class="expense-item" v-for="(exp, i) in todayExpenses" :key="exp.rowIndex">
+                                <div class="exp-left">
+                                    <span class="exp-cat">{{ exp.category }}</span>
+                                    <span class="exp-comment">{{ exp.comment }}</span>
+                                </div>
+                                <span class="exp-amount">{{ formatAmount(exp.amount) }} ฿</span>
+                                <!--                        <button type="button" @click="deleteExpense(exp)">Удалить</button>-->
+                                <button class="btn btn-delete" type="button" @click="deleteExpense(exp)" title="Удалить расход">🗑️</button>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Экран с итогами помесячно -->
+            <div class="app-total" v-if="isTotalOpen">
+                <!-- Траты за месяц -->
+                <div class="month-block">
+                    <button class="btn btn-primary btn-all" @click="toggleMonthDetails">{{ isMonthDetails ? 'Скрыть' : 'Посмотреть все траты за месяц' }}</button>
+
+                    <div class="month-details" v-if="isMonthDetails">
+                        <div class="month-header">
+                            <span class="month-title">Всего за месяц: </span>
+                            <span class="month-total">{{ formatAmount(monthTotal) }} ฿</span>
+                        </div>
+                        <div class="month-spend-box">
+                            <div class="month-spend" v-for="(value, key) in dailyTotals" :key="key">
+                                <span class="month-day">{{ key }}</span>
+                                <span class="month-day-total" :class="daysColorClass(value)">{{ formatAmount(value) }} ฿</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!--Навигация -->
+            <div class="app-navigation">
+                <nav class="navigation-wrap">
+                    <button
+                            class="nav-item"
+                            :class="{ active: isHomeOpen }"
+                            @click="openHome"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house-icon lucide-house">
+                            <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        </svg>
+                        <span class="nav-text">Главная</span>
+                    </button>
+
+                    <button
+                            class="nav-item"
+                            :class="{ active: isFormOpen }"
+                            @click="openForm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-notebook-pen-icon lucide-notebook-pen">
+                            <path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/>
+                        </svg>
+                        <span class="nav-text">Добавить</span>
+                    </button>
+
+                    <button
+                            class="nav-item"
+                            :class="{ active: isTotalOpen }"
+                            @click="openTotal"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-line-icon lucide-chart-line">
+                            <path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/>
+                        </svg>
+                        <span class="nav-text">Итоги</span>
+                    </button>
+                </nav>
             </div>
 
         </div>

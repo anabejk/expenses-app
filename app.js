@@ -31,6 +31,9 @@ const app = Vue.createApp({
             selectedMonth: '',
             selectedMonthName: '',
             availableMonths: [],
+            isHomeOpen: true,
+            isFormOpen: false,
+            isTotalOpen: false
         }
     },
     methods: {
@@ -226,10 +229,10 @@ const app = Vue.createApp({
             console.log('Итоговый availableMonths перед проверкой на новый месяц:', this.availableMonths);
 
 
-            if(!this.availableMonths.some(m => m.value === this.currentMonthKey )) {
+            if(!this.availableMonths.some(m => m.value === this.todayMonthKey )) {
                 this.availableMonths.unshift({
-                    value: this.currentMonthKey,
-                    label: this.currentMonthName
+                    value: this.todayMonthKey,
+                    label: this.todayMonthName
                 })
                 console.log('Итоговый availableMonths после проверки на новый месяц:', this.availableMonths);
             }
@@ -338,6 +341,22 @@ const app = Vue.createApp({
         changeMonth(){
             console.log(this.selectedMonth)
             this.selectedMonthName = this.availableMonths.find(m => m.value === this.selectedMonth).label
+        },
+        openHome() {
+            this.isHomeOpen = true
+            this.isFormOpen = false
+            this.isTotalOpen = false
+        },
+        openForm() {
+            this.isFormOpen = true
+            this.isHomeOpen = false
+            this.isTotalOpen = false
+            this.form.date = this.todayFullDate
+        },
+        openTotal() {
+            this.isTotalOpen = true
+            this.isHomeOpen = false
+            this.isFormOpen = false
         }
     },
     computed: {
@@ -356,27 +375,29 @@ const app = Vue.createApp({
             })
         },
         //Текущий год и месяц в формате YYYY-MM (тайм-зона Бангкок)
-        currentMonthKey() {
+        todayMonthKey() {
             const year = this.today.getFullYear()
             const month = String(this.today.getMonth() + 1).padStart(2, '0')
             return `${year}-${month}`
         },
-        todayFormatted() {
-            return this.today.toLocaleDateString('ru-RU', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-            })
-        },
-        currentMonthName() {
+        //Текущий год и месяц в формате month YYYY (тайм-зона Бангкок)
+        todayMonthName() {
             const raw = this.today.toLocaleDateString('ru-RU', {
                 month: 'long',
                 year: 'numeric',
             })
-
             return raw
                 .replace(' г.', '')
                 .replace(/^./, c => c.toLowerCase())
+        },
+        //Текущий день и месяц в формате day, month (тайм-зона Бангкок)
+        currentDayName() {
+            const [ year, month, day ] = this.form.date.split('-').map(Number)
+            return new Date (year, month - 1, day).toLocaleDateString('ru-RU', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long'
+            })
         },
         daysPassed() {
             return this.today.getDate()
@@ -403,7 +424,7 @@ const app = Vue.createApp({
         dailyTotals() {
             const map = {}
 
-            this.filteredExpenses.forEach(e => {
+            this.allExpenses.forEach(e => {
                 const date = e.date
 
                 const amount = Number(e.amount)
@@ -508,7 +529,7 @@ const app = Vue.createApp({
 
         //Отладка
         console.log('Дата в формате YYYY-MM-DD которую мы устанавливаем по умолчанию: ', this.todayFullDate)
-        console.log('Текущий год и месяц в формате YYYY-MM: ', this.currentMonthKey)
+        console.log('Текущий год и месяц в формате YYYY-MM: ', this.todayMonthKey)
         this.loadAvailableMonths()
         console.log('Стартовый месяц для подсчета: ',typeof this.selectedMonth)
         console.log('Сумма за день', this.dailyTotals)
