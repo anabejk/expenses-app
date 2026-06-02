@@ -57,7 +57,7 @@ const app = Vue.createApp({
             this.isAuthReady = true
         },
         signIn() {
-            this._tokenClient.requestAccessToken({ prompt: 'consent' })
+            this._tokenClient.requestAccessToken({ prompt: '' })
             this.errorAlert = null
         },
         signOut() {
